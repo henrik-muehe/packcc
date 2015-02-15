@@ -2049,17 +2049,16 @@ static code_reach_t generate_matching_string_code(generate_t *gen, const char *v
                 indent += 4;
             }
             write_characters(gen->stream, ' ', indent);
-            fputs("const char *s = ctx->buffer.buf + ctx->pos;\n", gen->stream);
             write_characters(gen->stream, ' ', indent);
             fputs("if (\n", gen->stream);
             write_characters(gen->stream, ' ', indent + 4);
             fprintf(gen->stream, "pcc_refill_buffer(ctx, %d) < %d ||\n", n, n);
             for (i = 0; i < n - 1; i++) {
                 write_characters(gen->stream, ' ', indent + 4);
-                fprintf(gen->stream, "s[%d] != '%s' ||\n", i, escape_character(value[i], &s));
+                fprintf(gen->stream, "((const char*)(ctx->buffer.buf + ctx->pos))[%d] != '%s' ||\n", i, escape_character(value[i], &s));
             }
             write_characters(gen->stream, ' ', indent + 4);
-            fprintf(gen->stream, "s[%d] != '%s'\n", i, escape_character(value[i], &s));
+            fprintf(gen->stream, "((const char*)(ctx->buffer.buf + ctx->pos))[%d] != '%s'\n", i, escape_character(value[i], &s));
             write_characters(gen->stream, ' ', indent);
             fprintf(gen->stream, ") goto L%04d;\n", onfail);
             write_characters(gen->stream, ' ', indent);
