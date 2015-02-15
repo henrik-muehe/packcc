@@ -76,196 +76,303 @@ The element stands for the entire pattern in the rule with the name given by rul
 **sequence1 / sequence2 / ... / sequenceN**
 
 Each sequence is tried in turn until one of them matches, at which time matching for the overall pattern succeeds. If no sequence matches then the matching for the overall pattern fails. The operator slash (/) has the least priority. The example is shown below.
+
     'foo' rule1 / 'bar'+ [0-9]? / rule2
+
 This pattern tries matching of the first sequence ('foo' rule1). If it succeeds, then the overall pattern matching succeeds and ends without evaluating the subsequent sequences. Otherwise, it tries matching of the next sequence ('bar'+ [0-9]?). If it succeeds, then the overall pattern matching succeeds and ends without evaluating the subsequent sequence. Finally, it tries matching of the last sequence (rule2). If it succeeds, then the overall pattern matching succeeds. Otherwise, the overall pattern matching fails.
-'string'
+
+**'string'**
+
 A character or string enclosed in single quotes is matched literally. The ANSI C escape sequences are recognized within the characters. The example is shown below.
-'foo bar'
-"string"
+
+    'foo bar'
+    
+**"string"**
 A character or string enclosed in double quotes is matched literally. The ANSI C escape sequences are recognized within the characters. The example is shown below.
-"foo bar"
-[character class]
+
+    "foo bar"
+    
+**[character class]**
+
 A set of characters enclosed in square brackets matches any single character from the set. The ANSI C escape sequences are recognized within the characters. If the set begins with an up-arrow (^), the set is negated (the element matches any character not in the set). Any pair of characters separated with a dash (-) represents the range of characters from the first to the second, inclusive. The examples are shown below.
-[abc]
-[^abc]
-[a-zA-Z0-9_]
-.
+
+    [abc]
+    [^abc]
+    [a-zA-Z0-9_]
+    .
+
 A dot (.) matches any single character. Note that the only time this fails is at the end of input, where there is no character to match.
-element ?
+
+**element ?**
+
 The element is optional. If present on the input, it is consumed and the match succeeds. If not present on the input, no text is consumed and the match succeeds anyway.
-element *
+
+**element * **
+
 The element is optional and repeatable. If present on the input, one or more occurrences of the element are consumed and the match succeeds. If no occurrence of the element is present on the input, the match succeeds anyway.
-element +
+
+**element +**
 The element is repeatable. If present on the input, one or more occurrences of the element are consumed and the match succeeds. If no occurrence of the element is present on the input, the match fails.
-& element
+
+**& element**
+
 The predicate succeeds only if the element can be matched. The input text scanned while matching element is not consumed from the input and remains available for subsequent matching.
-! element
+
+**! element**
+
 The predicate succeeds only if the element cannot be matched. The input text scanned while matching element is not consumed from the input and remains available for subsequent matching. A popular idiom is the following, which matches the end of input, after the last character of the input has already been consumed.
-!.
-( pattern )
+
+    !.
+
+**( pattern )**
+
 Parentheses are used for grouping (modifying the precedence of the pattern).
-< pattern >
+
+**< pattern >**
+
 Angle brackets are used for grouping (modifying the precedence of the pattern) and text capturing. The captured text is numbered in evaluation order, and can be referred to later using $1, $2, etc.
-$n
+
+**$n**
+
 A dollar ($) followed by a positive integer represents a text previously captured. The positive integer corresponds to the order of capturing. A $1 represents the first captured text. The examples are shown below.
-< [0-9]+ > 'foo' $1
+
+    < [0-9]+ > 'foo' $1
+    
 This matches 0foo0, 123foo123, etc.
-'[' < '='* > '[' !( ']' $1 ']' ) . )* ( ']' $1 ']' )
+
+    '[' < '='* > '[' !( ']' $1 ']' ) . )* ( ']' $1 ']' )
+    
 This matches [[...]], [=[...]=], [==[...]==], etc.
-{ c source code }
+
+**{ c source code }**
+
 Curly braces surround an action. The action is arbitrary C source code to be executed at the end of matching. Any braces within the action must be properly nested. One or more actions can be inserted in any places between elements in the pattern. Actions are not executed where matching fails.
-[0-9]+ 'foo' { puts("OK"); } 'bar' / [0-9]+ 'foo' 'baz'
+
+    [0-9]+ 'foo' { puts("OK"); } 'bar' / [0-9]+ 'foo' 'baz'
+
 In this example, if the input is 012foobar, the action { puts("OK"); } is to be executed, but if the input is 012foobaz, the action is not to be executed. All matched actions are guaranteed to be executed only once.
 In the action, the C source code can use the predefined variables below.
-$$ 
+
+**$$**
+
 The output variable, to which the result of the rule is stored.
-auxil
+
+**auxil**
 The user-defined data that is passed to the API function pcc_create().
-variable
+
+**variable**
+
 The result of the evaluated rule, which has been stored to the variable $$ in the action in the evaluated rule.
-$n
+
+**$n**
+
 The string of the captured text. The n is the positive integer that corresponds to the order of capturing. The variable $1 holds the string of the first captured text.
-$ns
+
+**$ns**
+
 The start position in the input of the captured text, inclusive. The n is the positive integer that corresponds to the order of capturing. The variable $1s holds the start position of the first captured text.
-$ne
+
+**$ne**
+
 The end position in the input of the captured text, exclusive. The n is the positive integer that corresponds to the order of capturing. The variable $1e holds the end position of the first captured text.
-$0
+
+**$0**
+
 The string of the text between the start position in the input at which the rule pattern begins to match and the current position in the input at which the element immediately before the action ends to match.
-$0s
+
+**$0s**
 The start position in the input at which the rule pattern begins to match.
-$0e
+
+**$0e**
+
 The current position in the input at which the element immediately before the action ends to match.
 The example is shown below.
-term <- l:term _ '+' _ r:factor { $$ = l + r; }
-factor <- < [0-9]+ >            { $$ = atoi($1); }
-_ <- [ \t]*
-element ~ { c source code }
+
+    term <- l:term _ '+' _ r:factor { $$ = l + r; }
+    factor <- < [0-9]+ >            { $$ = atoi($1); }
+    _ <- [ \t]*
+    element ~ { c source code }
+
 Curly braces following tilde (~) surround an error action. The error action is arbitrary C source code to be executed at the end of matching only if the preceding element matching fails. Any braces within the error action must be properly nested. One or more error actions can be inserted in any places after elements in the pattern. The operator tilde (~) binds less tightly than any other operator except alternation (/) and sequencing. The error action is intended to make error handling and recovery code easier to write. In the error action, all predefined variables described above are available as well. The examples are shown below.
-rule1 <- e1 e2 e3 ~{ error("e[12] ok; e3 has failed"); }
-rule2 <- (e1 e2 e3) ~{ error("one of e[123] has failed"); }
-%header { c source code }
+
+    rule1 <- e1 e2 e3 ~{ error("e[12] ok; e3 has failed"); }
+    rule2 <- (e1 e2 e3) ~{ error("one of e[123] has failed"); }
+    
+**%header { c source code }**
+
 The specified C source code is copied verbatim to the C header file before the generated parser API function declarations.
-%source { c source code }
+
+**%source { c source code }**
+
 The specified C source code is copied verbatim to the C source file before the generated parser implementation code.
-%common { c source code }
+
+**%common { c source code }**
+
 The specified C source code is copied verbatim to both of the C header file and the C source file before the generated parser API function declarations and the implementation code respectively.
-%value "output data type"
+
+**%value "output data type"**
+
 The type of output data, which is retrieved from the parser API function pcc_parse(), is changed to the specified one from the default int.
-%auxil "user-defined data type"
+
+**%auxil "user-defined data type"**
+
 The type of user-defined data, which is passed to the parser API function pcc_create(), is changed to the specified one from the default void *.
-%prefix "prefix"
+
+**%prefix "prefix"**
 The prefix of the parser API functions is changed to the specified one from the default pcc.
-#comment
+
+**#comment**
+
 A comment can be inserted between # and the end of the line.
-%%
+
+**%%**
+
 A double percent %% terminates the section for rule definitions of the grammar. All text following %% is copied verbatim to the C source file after the generated parser implementation code.
 (The specification is determined by referring to peg/leg developed by Ian Piumarta.)
+
 Macro
+-----
+
 Some macros are prepared to customize the parser. The macro definition should be in %source section in the PEG source.
-%source {
-    #define PCC_GETCHAR(auxil) get_character(auxil->input)
-    #define PCC_BUFFERSIZE 1024
-}
+
+    %source {
+        #define PCC_GETCHAR(auxil) get_character(auxil->input)
+        #define PCC_BUFFERSIZE 1024
+    }
+
 The following macros are available.
-PCC_GETCHAR(auxil)
+
+**PCC_GETCHAR(auxil)**
+
 The function macro to get a character from the input. The user-defined data passed to the API function pcc_create() can be retrieved from the argument auxil. It can be ignored if no user-defined data. This macro must return a character code as an int type, or -1 if the input ends.
 The default is defined as below.
-#define PCC_GETCHAR(auxil) getchar()
-PCC_ERROR(auxil)
+
+    #define PCC_GETCHAR(auxil) getchar()
+
+**PCC_ERROR(auxil)**
 The function macro to handle a syntax error. The user-defined data passed to the API function pcc_create() can be retrieved from the argument auxil. It can be ignored if no user-defined data. This macro need not return a value. It may abort the process (by using exit() for example) when a fatal error occurs, and can also return normally to deal with warnings.
 The default is defined as below.
-#define PCC_ERROR(auxil) pcc_error()
-static void pcc_error(void) {
-    fprintf(stderr, "Syntax error\n");
-    exit(1);
-}
-PCC_MALLOC(auxil,size)
+
+    #define PCC_ERROR(auxil) pcc_error()
+    static void pcc_error(void) {
+        fprintf(stderr, "Syntax error\n");
+        exit(1);
+    }
+
+**PCC_MALLOC(auxil,size)**
 The function macro to allocate a memory block. The user-defined data passed to the API function pcc_create() can be retrieved from the argument auxil. It can be ignored if no user-defined data. The argument size is the number of bytes to allocate. This macro must return a pointer to the allocated memory block, or NULL if no sufficient memory is available.
+
 The default is defined as below.
-#define PCC_MALLOC(auxil, size) pcc_malloc_e(size)
-static void *pcc_malloc_e(size_t size) {
-    void *p = malloc(size);
-    if (p == NULL) {
-        fprintf(stderr, "Out of memory\n");
-        exit(1);
+
+    #define PCC_MALLOC(auxil, size) pcc_malloc_e(size)
+    static void *pcc_malloc_e(size_t size) {
+        void *p = malloc(size);
+        if (p == NULL) {
+            fprintf(stderr, "Out of memory\n");
+            exit(1);
+        }
+        return p;
     }
-    return p;
-}
-PCC_REALLOC(auxil,ptr,size)
+
+**PCC_REALLOC(auxil,ptr,size)**
+
 The function macro to reallocate the existing memory block. The user-defined data passed to the API function pcc_create() can be retrieved from the argument auxil. It can be ignored if no user-defined data. The argument ptr is the pointer to the previously allocated memory block. The argument size is the new number of bytes to reallocate. This macro must return a pointer to the reallocated memory block, or NULL if no sufficient memory is available. The contents of the memory block should be left unchanged in any case even if the reallocation fails.
+
 The default is defined as below.
-#define PCC_REALLOC(auxil, ptr, size) pcc_realloc_e(ptr, size)
-static void *pcc_realloc_e(void *ptr, size_t size) {
-    void *p = realloc(ptr, size);
-    if (p == NULL) {
-        fprintf(stderr, "Out of memory\n");
-        exit(1);
+
+    #define PCC_REALLOC(auxil, ptr, size) pcc_realloc_e(ptr, size)
+    static void *pcc_realloc_e(void *ptr, size_t size) {
+        void *p = realloc(ptr, size);
+        if (p == NULL) {
+            fprintf(stderr, "Out of memory\n");
+            exit(1);
+        }
+        return p;
     }
-    return p;
-}
-PCC_FREE(auxil,ptr)
+
+**PCC_FREE(auxil,ptr)**
+
 The function macro to free the existing memory block. The user-defined data passed to the API function pcc_create() can be retrieved from the argument auxil. It can be ignored if no user-defined data. The argument ptr is the pointer to the previously allocated memory block. This macro need not return a value.
 The default is defined as below.
-#define PCC_FREE(auxil, ptr) free(ptr)
-PCC_BUFFERSIZE
+
+    #define PCC_FREE(auxil, ptr) free(ptr)
+
+**PCC_BUFFERSIZE**
+
 The initial size (the number of characters) of the text buffer. The text buffer is expanded as needed. The default is 256.
-PCC_ARRAYSIZE
+
+**PCC_ARRAYSIZE**
 The initial size (the number of elements) of the internal arrays other than the text buffer. The arrays are expanded as needed. The default is 2.
+
 API
+---
+
 The parser API has only 3 simple functions below.
-pcc_context_t *pcc_create(void *auxil);
+
+    pcc_context_t *pcc_create(void *auxil);
+
 Creates a parser context. This context needs to be passed to the functions below. The auxil can be used to pass user-defined data to be bound to the context. NULL can be specified if no user-defined data.
-int pcc_parse(pcc_context_t *ctx, int *ret);
+
+    int pcc_parse(pcc_context_t *ctx, int *ret);
+
 Parses an input text (from standard input by default) and returns the result in ret. The ret can be NULL if no output data is needed. This function returns 0 if no text is left to be parsed, or a non-0 value otherwise.
-void pcc_destroy(pcc_context_t *ctx);
+
+    void pcc_destroy(pcc_context_t *ctx);
+
 Destroys the parser context. All resources allocated in the parser context are released.
 The type of output data ret can be changed. If you want change it to char *, specify %value "char *" in the PEG source. The default is int.
+
 The type of user-defined data auxil can be changed. If you want change it to long, specify %auxil "long" in the PEG source. The default is void *.
 The prefix pcc can be changed. If you want change it to foo, specify %prefix "foo" in the PEG source. The default is pcc.
+
 After the above settings, the API functions change like below.
-foo_context_t *foo_create(long auxil);
 
-int foo_parse(foo_context_t *ctx, char **ret);
-
-void foo_destroy(foo_context_t *ctx);
+    foo_context_t *foo_create(long auxil);
+    int foo_parse(foo_context_t *ctx, char **ret);
+    void foo_destroy(foo_context_t *ctx);
+    
 The typical usage of the API functions is shown below.
-int ret;
-pcc_context_t *ctx = pcc_create(NULL);
-while (pcc_parse(ctx, &ret));
-pcc_destroy(ctx);
-Example
+    int ret;
+    pcc_context_t *ctx = pcc_create(NULL);
+    while (pcc_parse(ctx, &ret));
+    pcc_destroy(ctx);
+
+**Example**
+
 A desktop calculator. Note that there are left-recursive grammar rules.
-%prefix "calc"
+    %prefix "calc"
+    
+    statement <- _ e:expression _ EOL { printf("answer=%d\n", e); }
+               / ( !EOL . )* EOL      { printf("error\n"); }
+    
+    expression <- e:term { $$ = e; }
+    
+    term <- l:term _ '+' _ r:factor { $$ = l + r; }
+          / l:term _ '-' _ r:factor { $$ = l - r; }
+          / e:factor                { $$ = e; }
+    
+    factor <- l:factor _ '*' _ r:unary { $$ = l * r; }
+            / l:factor _ '/' _ r:unary { $$ = l / r; }
+            / e:unary                  { $$ = e; }
+    
+    unary <- '+' _ e:unary { $$ = +e; }
+           / '-' _ e:unary { $$ = -e; }
+           / e:primary     { $$ = e; }
+    
+    primary <- < [0-9]+ >               { $$ = atoi($1); }
+             / '(' _ e:expression _ ')' { $$ = e; }
+    
+    _      <- [ \t]*
+    EOL    <- '\n' / '\r\n' / '\r' / ';'
+    
+    %%
+    int main() {
+        calc_context_t *ctx = calc_create(NULL);
+        while (calc_parse(ctx, NULL));
+        calc_destroy(ctx);
+        return 0;
+    }
 
-statement <- _ e:expression _ EOL { printf("answer=%d\n", e); }
-           / ( !EOL . )* EOL      { printf("error\n"); }
-
-expression <- e:term { $$ = e; }
-
-term <- l:term _ '+' _ r:factor { $$ = l + r; }
-      / l:term _ '-' _ r:factor { $$ = l - r; }
-      / e:factor                { $$ = e; }
-
-factor <- l:factor _ '*' _ r:unary { $$ = l * r; }
-        / l:factor _ '/' _ r:unary { $$ = l / r; }
-        / e:unary                  { $$ = e; }
-
-unary <- '+' _ e:unary { $$ = +e; }
-       / '-' _ e:unary { $$ = -e; }
-       / e:primary     { $$ = e; }
-
-primary <- < [0-9]+ >               { $$ = atoi($1); }
-         / '(' _ e:expression _ ')' { $$ = e; }
-
-_      <- [ \t]*
-EOL    <- '\n' / '\r\n' / '\r' / ';'
-
-%%
-int main() {
-    calc_context_t *ctx = calc_create(NULL);
-    while (calc_parse(ctx, NULL));
-    calc_destroy(ctx);
-    return 0;
-}
 Project Members:
+----------------
 Arihiro Yoshida (admin)
