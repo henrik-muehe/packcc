@@ -2604,6 +2604,12 @@ static bool_t generate(context_t *ctx) {
     FILE *stream = ctx->sfile;
     {
         fputs(
+          "#pragma GCC diagnostic push\n"
+          "#pragma GCC diagnostic ignored \"-Wuninitialized\"\n"
+          ,
+          stream
+        );
+        fputs(
             "#ifndef PCC_BUFFERSIZE\n"
             "#define PCC_BUFFERSIZE 256\n"
             "#endif /* PCC_BUFFERSIZE */\n"
@@ -3787,6 +3793,7 @@ static bool_t generate(context_t *ctx) {
             "}\n",
             stream
         );
+        fputs("#pragma GCC diagnostic pop", stream);
     }
     {
         fputs(
