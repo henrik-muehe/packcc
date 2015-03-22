@@ -2605,7 +2605,7 @@ static bool_t generate(context_t *ctx) {
     {
         fputs(
           "#pragma GCC diagnostic push\n"
-          "#pragma GCC diagnostic ignored \"-Wuninitialized\"\n"
+          "#pragma GCC diagnostic ignored \"-Wcast-qual\"\n"
           ,
           stream
         );
